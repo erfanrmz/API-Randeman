@@ -1,6 +1,7 @@
 const express = require("express");
 const mongoose = require("mongoose");
 var Resource = require(__dirname + "/resource.js");
+var User = require(__dirname + "/user.js");
 
 mongoose.connect(
   "mongodb+srv://ResourceManager:0F7i0QjXzcL6yaoJ@resourcemanager.yosak.mongodb.net/myFirstDatabase?retryWrites=true&w=majority",
@@ -36,6 +37,8 @@ app.get("/getTask/:id", (req, res) => {
   });
 });
 app.post("/addTask/:id", (req, res) => {
+  var date = req.body.deadline.split("/");
+  var deadline = new Date(`${date[2]}-${date[1]}-${date[0]}`);
   Resource.findOne({ unique_id: req.params.id }).exec(function (err, resource) {
     if (!err) {
       var task = {
@@ -45,10 +48,37 @@ app.post("/addTask/:id", (req, res) => {
         priority: req.body.priority,
         resource: resource.name,
         createdDate: new Date(),
+        deadline: deadline,
       };
       resource.tasks.push(task);
       resource.save();
       res.sendStatus(200);
+    }
+  });
+});
+app.post("/register", (req, res) => {
+  User.findOne()
+    .sort({ field: "asc", _id: -1 })
+    .exec(function (err, data) {
+      const newUser = new User({
+        unique_id: c,
+        firstName: req.body.firstName,
+        lastName: req.body.lastName,
+        email: req.body.email,
+        password: req.body.password,
+        accountType: req.body.accountType,
+      });
+      newUser.save();
+      res.sendStatus(200);
+    });
+});
+
+app.post("/login", (req, res) => {
+  User.findOne({ email: req.body.email }).exec(function (err, user) {
+    if (user.password == req.body.password) {
+      res.sendStatus(200);
+    } else {
+      res.sendStatus(401);
     }
   });
 });
@@ -75,6 +105,6 @@ app.post("/addResource", (req, res) => {
     });
 });
 
-app.listen(3000, () => {
+app.listen(8080, () => {
   console.log("Server listening on port 3000");
 });

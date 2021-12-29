@@ -8,26 +8,31 @@ mongoose.connect(
   }
 );
 
-const resourceSchema = new mongoose.Schema({
+const userSchema = new mongoose.Schema({
   unique_id: Number,
-  name: {
+  firstName: {
     type: String,
     required: true,
   },
-  description: {
+  lastName: {
+    type: String,
+    required: true,
+  },
+  email: {
     type: String,
   },
-  tasks: [
+  password: {
+    type: String,
+  },
+  accountType: {
+    type: String,
+    enum: ["company", "contributor"],
+  },
+  contributors: [
     {
-      unique_id: Number,
-      name: String,
-      duration: Number,
-      priority: { type: Number, default: 0 },
-      resource: String,
-      createdDate: Date,
-      deadline: Date,
+      type: String,
     },
   ],
 });
 
-module.exports = mongoose.model("resource", resourceSchema);
+module.exports = mongoose.model("user", userSchema);
