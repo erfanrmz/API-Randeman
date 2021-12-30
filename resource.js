@@ -26,6 +26,8 @@ const resourceSchema = new mongoose.Schema({
       resource: String,
       createdDate: Date,
       deadline: Date,
+      startedAt: Date,
+      endedAt: Date,
     },
   ],
 });
