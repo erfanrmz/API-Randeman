@@ -37,20 +37,39 @@ app.get("/getTask/:id", (req, res) => {
   });
 });
 app.get("/getTaskByDate/:id", (req, res) => {
-  const d = new Date(`${req.query.day} ${req.query.month} 2021`);
-  const until = new Date(`${req.query.day} ${req.query.month} 2021`);
-  until.setHours(until.getHours() + 4);
-  until.setMinutes(until.getMinutes() + 29);
-  d.setHours(d.getHours() - 19);
-  d.setMinutes(d.getMinutes() - 30);
+  var arr = [];
+  // const d = new Date(`${req.query.day} ${req.query.month} 2021`);
+  // const until = new Date(`${req.query.day} ${req.query.month} 2021`);
+  // until.setHours(until.getHours() + 4);
+  // until.setMinutes(until.getMinutes() + 29);
+  // d.setHours(d.getHours() - 19);
+  // d.setMinutes(d.getMinutes() - 30);
   Resource.findOne({
     unique_id: req.params.id,
-    "tasks.deadline": new Date(2021, 7, 21),
   }).exec(function (err, resource) {
-    if (!err)
-      // resource.tasks.push(task);
-      // resource.save();
-      res.json(resource);
+    if (!err) {
+      dateS = new Date(req.query.year, req.query.month, req.query.day);
+      dateE = new Date(req.query.year, req.query.month, req.query.day);
+      dateE.setHours(dateE.getHours() + 27);
+      dateE.setMinutes(dateE.getMinutes() + 30);
+      dateS.setHours(dateS.getHours() + 3);
+      dateS.setMinutes(dateS.getMinutes() + 30);
+      console.log(dateS);
+      console.log(dateE);
+      if (resource.tasks.length !== null) {
+        for (var i = 0; i < resource.tasks.length; i++) {
+          if (
+            resource.tasks[i].startedAt >= dateS &&
+            resource.tasks[i].startedAt < dateE
+          ) {
+            arr.push(resource.tasks[i]);
+          }
+        }
+        res.json(arr);
+      }
+    } else {
+      res.json({});
+    }
   });
 });
 app.post("/addTask/:id", (req, res) => {
@@ -118,16 +137,17 @@ app.get("/getTasksByduration/:id", (req, res) => {
           if (result[j] == false) {
             var startedAt = new Date(2021, 0, 0);
             var endedAt = new Date(2021, 0, 0);
-            startedAt.setHours(startedAt.getHours() + 19);
-            startedAt.setMinutes(startedAt.getMinutes() + 210);
-            endedAt.setHours(endedAt.getHours() + 24);
-            endedAt.setMinutes(endedAt.getMinutes() + 210);
-            startedAt.setHours(startedAt.getHours() + j - 21);
+            startedAt.setHours(startedAt.getHours());
+            startedAt.setMinutes(startedAt.getMinutes());
+            endedAt.setHours(endedAt.getHours());
+            endedAt.setMinutes(endedAt.getMinutes());
+            startedAt.setHours(startedAt.getHours() + j);
             endedAt.setHours(
-              endedAt.getHours() + j - resource.tasks[i].duration - 21
+              endedAt.getHours() + j - resource.tasks[i].duration
             );
-            resource.tasks[i].startedAt = startedAt;
-            resource.tasks[i].endedAt = endedAt;
+            resource.tasks[i].startedAt = endedAt;
+            resource.tasks[i].endedAt = startedAt;
+            resource.save();
             for (let k = 0; k < resource.tasks[i].duration; k++) {
               result[j - k] = true;
               task[j - k] = resource.tasks[i].name;
@@ -212,7 +232,28 @@ app.post("/addResource", (req, res) => {
       res.sendStatus(200);
     });
 });
+app.get("/getDaysOfMonth", (req, res) => {
+  var days = [];
+  const weekday = [
+    "Sunday",
+    "Monday",
+    "Tuesday",
+    "Wednesday",
+    "Thursday",
+    "Friday",
+    "Saturday",
+  ];
+  for (let i = 1; i < 32; i++) {
+    d = new Date(`${i} ${req.query.month} 2022`);
+    day = {
+      daysOfWeek: weekday[d.getDay()],
+      daysOfMonth: i,
+    };
+    days.push(day);
+  }
+  res.json(days);
+});
 
-app.listen(8080, () => {
+app.listen(3000 || 8080, () => {
   console.log("Server listening on port 3000");
 });
