@@ -10,6 +10,7 @@ mongoose.connect(
 
 const resourceSchema = new mongoose.Schema({
   unique_id: Number,
+  company_id: Number,
   name: {
     type: String,
     required: true,

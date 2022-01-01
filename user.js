@@ -10,6 +10,7 @@ mongoose.connect(
 
 const userSchema = new mongoose.Schema({
   unique_id: Number,
+  company_id: Number,
   firstName: {
     type: String,
     required: true,
@@ -29,6 +30,11 @@ const userSchema = new mongoose.Schema({
     enum: ["company", "contributor"],
   },
   contributors: [
+    {
+      type: String,
+    },
+  ],
+  announcements: [
     {
       type: String,
     },

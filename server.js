@@ -18,11 +18,72 @@ app.use(
     limit: "50mb",
   })
 );
-
-app.get("/resources", (req, res) => {
+app.get("/companyInformation/:id", (req, res) => {
+  var resourceCount = 0;
+  var taskCount = 0;
+  var ContributorCount = 0;
+  var announcementCount = 0;
+  var contributors = ["erfan", "kiana", "mina"];
+  Resource.find({ company_id: req.params.id }).exec(function (err, found) {
+    if (found) {
+      console.log(found.length);
+      resourceCount = found.length;
+      for (let i = 0; i < found.length; i++) {
+        if (found[i].tasks) {
+          taskCount += found[i].tasks.length;
+        }
+      }
+      User.findOne({ company_id: req.params.id, accountType: "company" }).exec(
+        function (err, company) {
+          if (company.contributors && company.announcements) {
+            res.json({
+              resourceCount: resourceCount,
+              taskCount: taskCount,
+              ContributorCount: company.contributors.length,
+              announcementCount: company.announcements.length,
+              contributors: company.contributors,
+              announcements: company.announcements,
+            });
+          } else if (company.contributors && !company.announcements) {
+            res.json({
+              resourceCount: resourceCount,
+              taskCount: taskCount,
+              ContributorCount: company.contributors.length,
+              announcementCount: announcementCount,
+              contributors: company.contributors,
+              announcements: [],
+            });
+          } else if (!company.contributors && company.announcements) {
+            res.json({
+              resourceCount: resourceCount,
+              taskCount: taskCount,
+              ContributorCount: company.contributors.length,
+              announcementCount: company.announcements.length,
+              contributors: [],
+              announcements: company.announcements,
+            });
+          } else {
+            res.json({
+              resourceCount: resourceCount,
+              taskCount: taskCount,
+              ContributorCount: 3,
+              announcementCount: announcementCount,
+              contributors: contributors,
+              announcements: [],
+            });
+          }
+        }
+      );
+    }
+  });
+});
+app.get("/resources/:id", (req, res) => {
   var delayInMilliseconds = 2000; //2 second
   setTimeout(function () {
-    Resource.find({}).exec(function (err, resources) {
+    Resource.find({ company_id: req.params.id }).exec(function (
+      err,
+      resources
+    ) {
       res.json(resources);
     });
   }, delayInMilliseconds);
@@ -173,6 +234,7 @@ app.get("/getTasksByduration/:id", (req, res) => {
 });
 app.post("/register", (req, res) => {
   var c;
+  var l;
   User.findOne()
     .sort({ field: "asc", _id: -1 })
     .exec(function (err, data) {
@@ -181,33 +243,95 @@ app.post("/register", (req, res) => {
       } else {
         c = 1;
       }
-      const newUser = new User({
-        unique_id: c,
-        firstName: req.body.firstName,
-        lastName: req.body.lastName,
-        email: req.body.email,
-        password: req.body.password,
-        accountType: req.body.accountType,
-      });
-      newUser.save();
-      res.sendStatus(200);
+      User.findOne()
+        .sort({ field: "asc", company_id: -1 })
+        .exec(function (err, company) {
+          if (company) {
+            if (company.company_id) {
+              d = company.company_id + 1;
+            } else {
+              d = 1;
+            }
+          }
+          if (req.body.accountType != "company") d = null;
+          const newUser = new User({
+            unique_id: c,
+            company_id: d,
+            firstName: req.body.firstName,
+            lastName: req.body.lastName,
+            email: req.body.email,
+            password: req.body.password,
+            accountType: req.body.accountType,
+          });
+          newUser.save();
+          res.sendStatus(200);
+        });
     });
 });
-
+app.post("/addContributor/:id", (req, res) => {
+  User.findOne({ company_id: req.params.id, accountType: "company" }).exec(
+    function (err, admin) {
+      if (admin) {
+        User.findOne({ email: req.query.email }).exec(function (
+          err,
+          contributor
+        ) {
+          if (contributor) {
+            admin.contributors.push(contributor.firstName);
+            admin.save();
+            res.sendStatus(200);
+          } else {
+            res.sendStatus(404);
+          }
+        });
+      } else {
+        res.sendStatus(404);
+      }
+    }
+  );
+});
+app.post("/addAnnouncements/:id", (req, res) => {
+  User.findOne({ company_id: req.params.id, accountType: "company" }).exec(
+    function (err, admin) {
+      if (admin) {
+        admin.announcements.push(req.query.announcement);
+        admin.save();
+        res.sendStatus(200);
+      } else {
+        res.sendStatus(404);
+      }
+    }
+  );
+});
 app.post("/login", (req, res) => {
+  console.log("hello here");
   User.findOne({ email: req.body.email }).exec(function (err, user) {
     if (user) {
       if (user.password == req.body.password) {
         console.log("logged in");
-        res.sendStatus(200);
+        res.json({
+          userid: user.unique_id,
+          statusCode: 200,
+          company_id: user.company_id,
+        });
       } else {
         console.log("unauthorized");
-        res.sendStatus(401);
+        res.json({ userid: null, statusCode: 401, company_id: null });
       }
     } else {
       console.log("unauthorized");
-      res.sendStatus(401);
+      res.json({ userid: null, statusCode: 401, company_id: null });
     }
+  });
+});
+app.get("/getAccountInfo/:id", (req, res) => {
+  User.findOne({ unique_id: req.params.id }).exec(function (err, user) {
+    res.json({
+      firstname: user.firstName,
+      lastname: user.lastName,
+      email: user.email,
+      company_id: user.company_id,
+    });
   });
 });
 
@@ -225,6 +349,7 @@ app.post("/addResource", (req, res) => {
       }
       const newResource = new Resource({
         unique_id: c,
+        company_id: req.body.company_id,
         name: req.body.name,
         description: req.body.description,
       });
