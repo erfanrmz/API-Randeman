@@ -165,7 +165,7 @@ function getDayOfYear(date) {
 }
 app.get("/getTasksByduration/:id", (req, res) => {
   var now = new Date();
-  var start = new Date(2021, 0, 0);
+  var start = new Date(2022, 0, 0);
   start.setHours(start.getHours() + 24);
   start.setMinutes(start.getMinutes() + 210);
   start.setHours(start.getHours() + 7877);
@@ -196,8 +196,8 @@ app.get("/getTasksByduration/:id", (req, res) => {
           j--
         ) {
           if (result[j] == false) {
-            var startedAt = new Date(2021, 0, 0);
-            var endedAt = new Date(2021, 0, 0);
+            var startedAt = new Date(2022, 0, 0);
+            var endedAt = new Date(2022, 0, 0);
             startedAt.setHours(startedAt.getHours());
             startedAt.setMinutes(startedAt.getMinutes());
             endedAt.setHours(endedAt.getHours());
@@ -277,6 +277,8 @@ app.post("/addContributor/:id", (req, res) => {
           contributor
         ) {
           if (contributor) {
+            contributor.company_id = req.params.id;
+            contributor.save();
             admin.contributors.push(contributor.firstName);
             admin.save();
             res.sendStatus(200);
@@ -332,6 +334,19 @@ app.get("/getAccountInfo/:id", (req, res) => {
       email: user.email,
       company_id: user.company_id,
     });
+  });
+});
+
+app.post("/deleteResource/:id", (req, res) => {
+  Resource.findOne({ unique_id: req.params.id }).remove(function (
+    err,
+    resource
+  ) {
+    if (err) {
+      res.sendStatus(404);
+    } else {
+      res.sendStatus(200);
+    }
   });
 });
 
